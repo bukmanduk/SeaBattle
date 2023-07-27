@@ -59,6 +59,7 @@ void SeaBattle::Start()
 		HumanMove();
 		BotMove();
 	}
+	End();
 	return;
 	for (int i = 0; i < 100; i++)
 	{
@@ -374,11 +375,11 @@ void SeaBattle::BotPutsShip()
 
 bool SeaBattle::CellCorrect(std::string& input)
 {
-	if (size(input) < 2) { Error(0); return false; }												// если длина < 2, то плохо
+	if (size(input) < 2) { Error(7); return false; }												// если длина < 2, то плохо
 	char check = input[0];
-	if (check < '0' || check > '9') { Error(1); return false; }									// если НЕ между 0 и 9, то ай-яй
+	if (check < '0' || check > '9') { Error(8); return false; }									// если НЕ между 0 и 9, то ай-яй
 	check = input[1];
-	if (check < 'A' || check > 'J') if (check < 'a' || check > 'j') { Error(2); return false; }		// если НЕ между A и J или НЕ между a и j, то ой-ёй
+	if (check < 'A' || check > 'J') if (check < 'a' || check > 'j') { Error(9); return false; }		// если НЕ между A и J или НЕ между a и j, то ой-ёй
 
 	int point = board::StringToPoint(input);
 	if (m_bBot.GetSymbolPoint(point) != GAME_SYMBOL) { Error(6); return false; }
@@ -393,14 +394,14 @@ void SeaBattle::HumanMove()
 	{
 		MoveDisplay(true);
 
-		std::cout << "\n\n ---> Enter cell number: ";
+		std::cout << "\n\n\n ---> Enter cell number: ";
 		std::cin >> input;
 
 		err_count = 0;
 		while (!CellCorrect(input))
 		{
 			err_count++;
-			MoveDisplay(true);
+			//MoveDisplay(true);
 			if (err_count % 5 != 0) std::cout << "\n\n ---> Enter cell number (example: 1A): ";
 			else std::cout << "\n      So boring... Bot fell asleep.\n ---> Enter cell number: ";
 			std::cin >> input;
@@ -685,23 +686,26 @@ void SeaBattle::DisplayRules()
 void SeaBattle::End()
 {
 	system("cls");
-	std::cout << "\n | ENDING GAME\n\n";
-	std::cout << "\n\n | GAME OVER!\n\n";
+	std::cout << "\n | ENDING GAME";
+	std::cout << "\n\n | GAME OVER:";
 
 	if (EmptyHumanShip())
 	{
 		for (int point = 0; point < BOARD_LEN * BOARD_LEN; point++)
-			if (m_bHuman.GetSymbolPoint(point) == GAME_SYMBOL && m_bHuman.GetAdress(point) != 0)
-				m_bHuman.SetSymbolPoint(point, SHIP_SYMBOL);
-		std::cout << "\n\n | BOT WINS!\n\n";
+			if (m_bBot.GetSymbolPoint(point) == GAME_SYMBOL && m_bBot.GetAdress(point) != 0)
+				m_bBot.SetSymbolPoint(point, SHIP_SYMBOL);
+		std::cout << "\n | BOT WINS!\n\n";
 	}
-	else std::cout << "\n\n | YOU WIN!\n\n";
+	else std::cout << "\n | YOU WIN!\n\n";
+	std::cout << "\n | See the ships you cant find (symbol: S):\n\n";
 	DisplayBoards();
+	std::cout << "\n\n\n\n\n\n ";
 }
 
 void SeaBattle::Error(int errNum)
 {
-	PutDisplay();
+	if (errNum < 6) PutDisplay();
+	else MoveDisplay(true);
 	switch (errNum)
 	{
 	case 0:
@@ -723,7 +727,16 @@ void SeaBattle::Error(int errNum)
 		std::cout << "\n   !> Error: ship crosses other ship.";
 		break;
 	case 6:
-		std::cout << "   !> Error: the cell has already been used.";
+		std::cout << "\n   !> Error: the cell has already been used.";
+		break;
+	case 7:
+		std::cout << "\n   !> Error: size less than 2.";
+		break;
+	case 8:
+		std::cout << "\n   !> Error: first symbol is not number.";
+		break;
+	case 9:
+		std::cout << "\n   !> Error: second symbol should be a letter from board columns.";
 		break;
 	}
 }
