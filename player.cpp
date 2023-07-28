@@ -156,7 +156,6 @@ void Human::PutsShip()
 		if (input == "back" || input == "b") { p_ship = 0; continue; }
 
 		m_board.PutShip(input, *p_ship);
-		//std::cout << &m_human[0] << " " << p_ship << " " << m_bHuman.p_board[0];
 		CountMinus(number - 1);
 
 		a++;
@@ -165,20 +164,20 @@ void Human::PutsShip()
 
 bool Human::IsInputCorrect(std::string& input, const ship& obj, const board& b)
 {
-	if (size(input) < 2) { Error(0); return false; }												// если длина < 2, то плохо
+	if (size(input) < 2) { Error(0); return false; }
 	char check = input[0];
-	if (check < '0' || check > '9') { Error(1); return false; }									// если НЕ между 0 и 9, то ай-яй
+	if (check < '0' || check > '9') { Error(1); return false; }
 	check = input[1];
-	if (check < 'A' || check > 'J') if (check < 'a' || check > 'j') { Error(2); return false; }		// если НЕ между A и J или НЕ между a и j, то ой-ёй
-	if (obj.GetDeck() != 1)																// если НЕ однопалубный
+	if (check < 'A' || check > 'J') if (check < 'a' || check > 'j') { Error(2); return false; }
+	if (obj.GetDeck() != 1)
 	{
 		if (size(input) >= 3)
 		{
 			check = input[2];
-			if (check == RIGHT || check == LEFT || check == UP || check == DOWN);	// если равно хотя бы одному, то молодец
+			if (check == RIGHT || check == LEFT || check == UP || check == DOWN);
 			else { Error(3); return false; }
 		}
-		else input += RIGHT;																// по умолчанию будет >
+		else input += RIGHT;
 	}
 
 	int firstElOfRow = (input[0] - 48) * BOARD_LEN, point = firstElOfRow; check = input[1];
@@ -271,8 +270,6 @@ Bot::Bot() : Player()
 
 void Bot::PutsShip()
 {
-	//m_board.DisplayBoard();
-
 	const std::vector<char> orientation = { RIGHT, LEFT, UP, DOWN };					// все направления
 	std::vector<char> chooseOrientation;												// выбранные направления (возможные)
 	std::vector<int> shipNumber; for (int i = 0; i < 4; i++) shipNumber.push_back(i);	// номер корабля, НЕ сам корабль
@@ -342,11 +339,10 @@ void Bot::PutsShip()
 		if (GetCount(rNumShip) == 0) for (int i = 0; i < static_cast<int>(shipNumber.size()); i++)
 			if (shipNumber[i] == rNumShip) shipNumber.erase(shipNumber.begin() + i);
 
-		//m_board.DisplayBoards();
 		input = "";
 		chooseOrientation.clear();
 	}
-	std::cout << "\n cat = " << cat << " cat2 = " << cat2 << std::endl;
+	//std::cout << "\n cat = " << cat << " cat2 = " << cat2 << std::endl;
 	return;
 }
 
