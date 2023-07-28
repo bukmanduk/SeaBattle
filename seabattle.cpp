@@ -3,6 +3,20 @@
 SeaBattle::SeaBattle() : m_human(), m_bot()
 {}
 
+void SeaBattle::Start()
+{
+	PreStart();
+	m_bot.PutsShip();
+	m_human.PutsShip();
+	RemakeBoardsForStart();
+	while (!m_human.EmptyShip() && !m_bot.EmptyShip())
+	{
+		HumanMove();
+		BotMove();
+	}
+	End();
+}
+
 void SeaBattle::RemakeBoardsForStart()
 {
 	m_human.SetGeneralStep(0); m_bot.SetGeneralStep(0);
@@ -17,54 +31,13 @@ void SeaBattle::RemakeBoardsForStart()
 	m_human.ResetCount(); m_bot.ResetCount();
 }
 
-void SeaBattle::Start()
-{
-	//PreStart();
-	//return;
-	m_bot.PutsShip();
-	m_human.PutsShip();
-	DisplayBoards();
-	return;
-	RemakeBoardsForStart();
-	//g.m_bHuman.DisplayBoards();
-	/*while (!EmptyHumanShip() && !EmptyBotShip())
-	{
-		HumanMove();
-		BotMove();
-	}*/
-	End();
-	return;
-	for (int i = 0; i < 100; i++)
-	{
-		HumanMove();
-		BotMove();
-		//g.m_bHuman.DisplayBoards();
-		//Sleep(7000);
-	}
-	return;
-}
-
-void SeaBattle::DisplayBoards()
-{
-	std::cout << "\n        - BOTs BOARD -  \t       - YOUR BOARD -  \n";
-	std::cout << "\n     A B C D E F G H I J\t    A B C D E F G H I J\n";
-	for (int i = 0; i < BOARD_LEN; i++)
-	{
-		std::cout << " " << std::setw(2) << std::right << i << " ";
-		for (int j = 0; j < BOARD_LEN; j++) std::cout << " " << m_bot.GetSymbolFromBoard(i * BOARD_LEN + j);
-		std::cout << "\t" << std::setw(2) << std::right << i << " ";
-		for (int j = 0; j < BOARD_LEN; j++) std::cout << " " << m_human.GetSymbolFromBoard(i * BOARD_LEN + j);
-		std::cout << std::endl;
-	}
-}
-
 bool SeaBattle::CellCorrect(std::string& input)
 {
-	if (size(input) < 2) { Error(7); return false; }												// если длина < 2, то плохо
+	if (size(input) < 2) { Error(7); return false; }
 	char check = input[0];
-	if (check < '0' || check > '9') { Error(8); return false; }									// если НЕ между 0 и 9, то ай-яй
+	if (check < '0' || check > '9') { Error(8); return false; }
 	check = input[1];
-	if (check < 'A' || check > 'J') if (check < 'a' || check > 'j') { Error(9); return false; }		// если НЕ между A и J или НЕ между a и j, то ой-ёй
+	if (check < 'A' || check > 'J') if (check < 'a' || check > 'j') { Error(9); return false; }
 
 	int point = board::StringToPoint(input);
 	if (m_bot.GetSymbolFromBoard(point) != GAME_SYMBOL) { Error(6); return false; }
@@ -77,19 +50,18 @@ void SeaBattle::HumanMove()
 
 	while (!m_bot.EmptyShip())
 	{
-		MoveDisplay(true);
+		DisplayMoving(true);
 
 		std::cout << "\n\n\n ---> Enter cell number: ";
-		std::cin >> input;
+		Console::Read(input);
 
 		err_count = 0;
 		while (!CellCorrect(input))
 		{
 			err_count++;
-			MoveDisplay(true);
 			if (err_count % 5 != 0) std::cout << "\n\n ---> Enter cell number (example: 1A): ";
 			else std::cout << "\n      So boring... Bot fell asleep.\n ---> Enter cell number: ";
-			std::cin >> input;
+			Console::Read(input);
 		}
 		point = board::StringToPoint(input);
 
@@ -124,24 +96,31 @@ void SeaBattle::FindBadOrientations(int point, int step, std::vector<char>& orie
 	if (!GoodPoint(point + BOARD_LEN * step)) orientation[3] = 0;
 }
 
+bool SeaBattle::GoodPoint(int point)
+{
+	if (point < 0 || point >= BOARD_LEN * BOARD_LEN) return false;
+	if (m_human.GetStepFromBoard(point) != 0) return false;
+	return true;
+}
+
 void SeaBattle::BotMove()
 {
-	static std::vector<char> orientation = { RIGHT, LEFT, UP, DOWN };						// все направления
-	std::vector<char> chooseOrientation;												// выбранные направления (возможные)
+	static std::vector<char> orientation = { RIGHT, LEFT, UP, DOWN };	// все направления
 	static std::vector<int> boardNum; if (boardNum.empty()) for (int i = 0; i < 100; i++) boardNum.push_back(i);
-	static int point = -1; static int step = 0;
+	static int generalPoint = -1; static int generalStep = 0;
 	static bool test = true;
 	
 	srand(static_cast<unsigned int>(time(0)));
-	int rNumBoard = 0;								// рандомный номер точки доски
-	int rNumOrientation = 0;						// рандомный номер возможных направлений
+	int rNumBoard = 0;										// рандомный номер точки доски
+	int rNumOrientation = 0;								// рандомный номер возможных направлений
 
 	std::vector<int>::iterator numFind;
+	std::vector<char> chooseOrientation;					// выбранные направления (возможные)
 
 	while (!m_human.EmptyShip())
 	{
-		MoveDisplay(false);
-		if (point == -1)
+		DisplayMoving();
+		if (generalPoint == -1)
 		{
 			if (test)
 			{
@@ -149,26 +128,28 @@ void SeaBattle::BotMove()
 			}
 			else rNumBoard = rand() % boardNum.size();
 			rNumBoard = boardNum[rNumBoard];
-			point = rNumBoard;
+			generalPoint = rNumBoard;
 		}
 
-		// если попал !!!
-		if (m_human.GetAdressFromBoard(point) != 0)
+		// если попал
+		if (m_human.GetAdressFromBoard(generalPoint) != 0)
 		{
-			ship* obj = m_human.GetAdressFromBoard(point);
-			if (GoodPoint(point)) 
+			ship* obj = m_human.GetAdressFromBoard(generalPoint);
+			if (GoodPoint(generalPoint))	// если бьем первый раз (т.к. после заверш. функции точка запоминается)
 			{ 
 				obj->Hit(); 
-				m_human.SetSymbolOnBoard(point, HIT); 
-				std::cout << "\n\n    > Bot will hit a cell: " << board::PointToString(point) << "\n ---> ";
-				system("pause");
-				MoveDisplay(false); 
+				m_human.SetSymbolOnBoard(generalPoint, HIT);
+				std::cout << "\n\n    > Bot will hit a cell: " << board::PointToString(generalPoint) << "\n ---> ";
+				Console::Pause();
+				DisplayMoving();
 			}
 
 			while (!obj->ShipDestroyed())
 			{
-				if (step == 0) FindBadOrientations(point, 1, orientation);
-				if (step == 1) if (chooseOrientation.size() > 1)
+				// находим возможные направления куда бить дальше
+				if (generalStep == 0) FindBadOrientations(generalPoint, 1, orientation);
+				// если уже подбито 2 точки - есть максимум 2 направления
+				if (generalStep == 1) if (chooseOrientation.size() > 1)
 					if (chooseOrientation[rNumOrientation] == RIGHT || chooseOrientation[rNumOrientation] == LEFT)
 					{
 						orientation[2] = 0; orientation[3] = 0;
@@ -177,109 +158,112 @@ void SeaBattle::BotMove()
 					{
 						orientation[0] = 0; orientation[1] = 0;
 					}
-				if (step > 0) if (chooseOrientation.size() > 1)
+				// проверка: если 2 (3/4) точка если под ней (над/рядом) плохая точка
+				if (generalStep > 0) if (chooseOrientation.size() > 1)
 				{
 					if (chooseOrientation[rNumOrientation] == RIGHT)
-						if (!GoodPoint(point + step) || point + step > point / BOARD_LEN * BOARD_LEN + 9) orientation[0] = 0;
+						if (!GoodPoint(generalPoint + generalStep) || generalPoint + generalStep > generalPoint / BOARD_LEN * BOARD_LEN + 9)
+							orientation[0] = 0;
 					if (chooseOrientation[rNumOrientation] == LEFT)
-						if (!GoodPoint(point - step) || point - step < point / BOARD_LEN * BOARD_LEN) orientation[1] = 0;
+						if (!GoodPoint(generalPoint - generalStep) || generalPoint - generalStep < generalPoint / BOARD_LEN * BOARD_LEN)
+							orientation[1] = 0;
 					if (chooseOrientation[rNumOrientation] == UP)
-						if (!GoodPoint(point - 10)) orientation[2] = 0;
+						if (!GoodPoint(generalPoint - 10))
+							orientation[2] = 0;
 					if (chooseOrientation[rNumOrientation] == DOWN)
-						if (!GoodPoint(point + 10)) orientation[3] = 0;
+						if (!GoodPoint(generalPoint + 10))
+							orientation[3] = 0;
 				}
-				int lastPoint = point;
+				int lastPoint = generalPoint;
 				if (chooseOrientation.size() != 1)
 				{
 					if (!chooseOrientation.empty()) chooseOrientation.clear();
-
+					// создаем заново вектор возможных направлений
 					for (int i = 0; i < 4; i++) if (orientation[i] != 0) chooseOrientation.push_back(orientation[i]);
 					rNumOrientation = rand() % chooseOrientation.size();
 				}
-				if (chooseOrientation[rNumOrientation] == RIGHT) while (m_human.GetSymbolFromBoard(point) == HIT) point = point + 1;
-				else if (chooseOrientation[rNumOrientation] == LEFT) while (m_human.GetSymbolFromBoard(point) == HIT) point = point - 1;
-				else if (chooseOrientation[rNumOrientation] == UP) while (m_human.GetSymbolFromBoard(point) == HIT) point = point - 10;
-				else if (chooseOrientation[rNumOrientation] == DOWN) while (m_human.GetSymbolFromBoard(point) == HIT) point = point + 10;
+				if (chooseOrientation[rNumOrientation] == RIGHT) 
+					while (m_human.GetSymbolFromBoard(generalPoint) == HIT) generalPoint++;
+				else if (chooseOrientation[rNumOrientation] == LEFT) 
+					while (m_human.GetSymbolFromBoard(generalPoint) == HIT) generalPoint--;
+				else if (chooseOrientation[rNumOrientation] == UP) 
+					while (m_human.GetSymbolFromBoard(generalPoint) == HIT) generalPoint -= 10;
+				else if (chooseOrientation[rNumOrientation] == DOWN) 
+					while (m_human.GetSymbolFromBoard(generalPoint) == HIT) generalPoint += 10;
 
-				std::cout << "\n\n    > Bot will hit a cell: " << board::PointToString(point) << "\n ---> ";
-				system("pause");
+				std::cout << "\n\n    > Bot will hit a cell: " << board::PointToString(generalPoint) << "\n ---> ";
+				Console::Pause();
 
-				if (m_human.GetAdressFromBoard(point) != 0)
+				if (m_human.GetAdressFromBoard(generalPoint) != 0)
 				{
-					step++;
-					obj->Hit(); m_human.SetSymbolOnBoard(point, HIT);
-					MoveDisplay(false);
+					generalStep++;
+					obj->Hit(); m_human.SetSymbolOnBoard(generalPoint, HIT);
+					DisplayMoving();
 				}
 				else
 				{
-					m_human.SetSymbolOnBoard(point, MISS);
-					MoveDisplay(false);
-					point = lastPoint;
-					if (step > 0)
+					m_human.SetSymbolOnBoard(generalPoint, MISS);
+					DisplayMoving();
+					generalPoint = lastPoint;
+					// не попали - убираем направление (повторяет функцию FindBadOrientation при step=0)
+					if (generalStep > 0)
 					{
-						if (chooseOrientation[rNumOrientation] == RIGHT)
-						{
-							//while (m_bHuman.GetSymbolPoint(point) == 'V') point = point - 1;
-							orientation[0] = 0;
-						}
-						else if (chooseOrientation[rNumOrientation] == LEFT)
-						{
-							//while (m_bHuman.GetSymbolPoint(point) == 'V') point = point + 1;
-							orientation[1] = 0;
-						}
-						else if (chooseOrientation[rNumOrientation] == UP)
-						{
-							//while (m_bHuman.GetSymbolPoint(point) == 'V') point = point + 10;
-							orientation[2] = 0;
-						}
-						else if (chooseOrientation[rNumOrientation] == DOWN)
-						{
-							//while (m_bHuman.GetSymbolPoint(point) == 'V') point = point - 10;
-							orientation[3] = 0;
-						}
+						if (chooseOrientation[rNumOrientation] == RIGHT)     orientation[0] = 0;
+						else if (chooseOrientation[rNumOrientation] == LEFT) orientation[1] = 0;
+						else if (chooseOrientation[rNumOrientation] == UP)   orientation[2] = 0;
+						else if (chooseOrientation[rNumOrientation] == DOWN) orientation[3] = 0;
 					}
 					return;
 				}
 			}
+			// эта часть выполняется только если уничтожен корабль
 			char orient = RIGHT;
-			if (step != 0)
+			if (generalStep != 0)
 			{
 				orient = chooseOrientation[rNumOrientation];
-				if (orient == RIGHT) orient = LEFT;
+				if (orient == RIGHT)     orient = LEFT;
 				else if (orient == LEFT) orient = RIGHT;
-				else if (orient == UP) orient = DOWN;
+				else if (orient == UP)   orient = DOWN;
 				else if (orient == DOWN) orient = UP;
 			}
-			Bot::DelNumFromBoard(point, orient, boardNum, *obj);
-			m_human.CountMinus(step);
+			Bot::DelNumFromBoard(generalPoint, orient, boardNum, *obj);
+			m_human.CountMinus(generalStep);
 
 			orientation = { RIGHT, LEFT, UP, DOWN };
-			point = -1; step = 0;
+			generalPoint = -1; generalStep = 0;
 		}
 		else
 		{
-			m_human.SetSymbolOnBoard(point, MISS);
-			std::cout << "\n\n    > Bot will hit a cell: " << board::PointToString(point) << "\n ---> ";
-			system("pause");
-			MoveDisplay(false);
-			numFind = find(boardNum.begin(), boardNum.end(), point);
+			m_human.SetSymbolOnBoard(generalPoint, MISS);
+			std::cout << "\n\n    > Bot will hit a cell: " << board::PointToString(generalPoint) << "\n ---> ";
+			Console::Pause();
+			DisplayMoving();
+
+			numFind = find(boardNum.begin(), boardNum.end(), generalPoint);
 			if (numFind != boardNum.end()) boardNum.erase(numFind);
-			point = -1;
-			break;
+
+			generalPoint = -1; break;
 		}
 	}
 }
 
-bool SeaBattle::GoodPoint(int point)
+void SeaBattle::DisplayBoards()
 {
-	if (point < 0 || point >= BOARD_LEN * BOARD_LEN) return false;
-	if (m_human.GetStepFromBoard(point) != 0) return false;
-	return true;
+	std::cout << "\n        - BOTs BOARD -  \t       - YOUR BOARD -  \n";
+	std::cout << "\n     A B C D E F G H I J\t    A B C D E F G H I J\n";
+	for (int i = 0; i < BOARD_LEN; i++)
+	{
+		std::cout << " " << std::setw(2) << std::right << i << " ";
+		for (int j = 0; j < BOARD_LEN; j++) std::cout << " " << m_bot.GetSymbolFromBoard(i * BOARD_LEN + j);
+		std::cout << "\t" << std::setw(2) << std::right << i << " ";
+		for (int j = 0; j < BOARD_LEN; j++) std::cout << " " << m_human.GetSymbolFromBoard(i * BOARD_LEN + j);
+		std::cout << std::endl;
+	}
 }
 
-void SeaBattle::MoveDisplay(bool human)
+void SeaBattle::DisplayMoving(bool human)
 {
-	system("cls");
+	Console::Clear();
 	if (human) std::cout << "\n | GAME STARTED: HUMAN MOVE\n\n";
 	else std::cout << "\n | GAME STARTED: BOT MOVE\n\n";
 	std::cout << " |              Ships   Count   |              Ships   Count\n";
@@ -311,19 +295,19 @@ void SeaBattle::PreStart()
 	std::cout << "    \\   ##    #  ###  ###   / \n";
 	std::cout << "  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n\n | ";
 
-	system("pause");
+	Console::Pause();
 	DisplayRules();
 
-	std::string input = "";
+	std::string input;
 	std::cout << "\n\n\n ---> Enter 1 to start putting ships: ";
-	std::cin >> input;
+	Console::Read(input);
 	if (input == "1") return;
 	else
 	{
 		DisplayRules();
 		std::cout << "\n\n    > You dont enter the 1!";
 		std::cout << "\n ---> Enter 1 to start putting ships: ";
-		std::cin >> input;
+		Console::Read(input);
 		if (input == "1") return;
 		else 
 		{
@@ -336,7 +320,7 @@ void SeaBattle::PreStart()
 
 void SeaBattle::DisplayRules()
 {
-	system("cls");
+	Console::Clear();
 	std::cout << "\n | PRESTART GAME\n\n";
 	std::cout << "\n                     --- SEABATTLE ---\n";
 	std::cout << "\n | Welcome to game: SeaBattle!";
@@ -357,7 +341,7 @@ void SeaBattle::DisplayRules()
 
 void SeaBattle::End()
 {
-	system("cls");
+	Console::Clear();
 	std::cout << "\n | ENDING GAME";
 	std::cout << "\n\n | GAME OVER:";
 
@@ -376,7 +360,7 @@ void SeaBattle::End()
 
 void SeaBattle::Error(int errNum)
 {
-	MoveDisplay(true);
+	DisplayMoving(true);
 	switch (errNum)
 	{
 	case 6:
