@@ -108,7 +108,6 @@ void SeaBattle::BotMove()
 	static std::vector<char> orientation = { RIGHT, LEFT, UP, DOWN };	// все направления
 	static std::vector<int> boardNum; if (boardNum.empty()) for (int i = 0; i < 100; i++) boardNum.push_back(i);
 	static int generalPoint = -1; static int generalStep = 0;
-	static bool test = true;
 	
 	srand(static_cast<unsigned int>(time(0)));
 	int rNumBoard = 0;										// рандомный номер точки доски
@@ -122,11 +121,7 @@ void SeaBattle::BotMove()
 		DisplayMoving();
 		if (generalPoint == -1)
 		{
-			if (test)
-			{
-				rNumBoard = 22; test = false;
-			}
-			else rNumBoard = rand() % boardNum.size();
+			rNumBoard = rand() % boardNum.size();
 			rNumBoard = boardNum[rNumBoard];
 			generalPoint = rNumBoard;
 		}
