@@ -19,6 +19,7 @@ class Console
 public:
 	static void Pause();
 	static void Clear();
+	static void Color();
 	static void Read(std::string& input);
 	static void QuitProgram();
 };

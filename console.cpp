@@ -10,6 +10,11 @@ void Console::Clear()
 	system("cls");
 }
 
+void Console::Color()
+{
+	system("color 8F");
+}
+
 void Console::Read(std::string& input)
 {
 	std::cin >> input;
