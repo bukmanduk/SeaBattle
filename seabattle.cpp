@@ -48,7 +48,7 @@ void SeaBattle::HumanMove()
 {
 	std::string input; int point = 0, count = 0, err_count = 0;
 
-	while (!m_bot.EmptyShip())
+	while (!m_bot.EmptyShip() && !m_human.EmptyShip())
 	{
 		DisplayMoving(true);
 
@@ -117,7 +117,7 @@ void SeaBattle::BotMove()
 	std::vector<int>::iterator numFind;
 	std::vector<char> chooseOrientation;					// выбранные направления (возможные)
 
-	while (!m_human.EmptyShip())
+	while (!m_human.EmptyShip() && !m_bot.EmptyShip())
 	{
 		DisplayMoving();
 		if (generalPoint == -1)
@@ -277,6 +277,7 @@ void SeaBattle::DisplayMoving(bool human)
 
 void SeaBattle::PreStart()
 {
+	Console::Color();
 	std::cout << "\n | LOADING GAME...\n";
 	std::cout << "\n | CREATOR: MARIA MOLCHANOVA\n\n\n";
 
