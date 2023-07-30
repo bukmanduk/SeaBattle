@@ -1,5 +1,5 @@
-# SeaBattle
-_Игра "Морской Бой", реализованная на языке С++ с применением ООП (консольное приложение)._
+<a name="up"><h1>SeaBattle</h1></a>
+_Игра "Морской Бой", реализованная на языке С++ с применением ООП (консольное приложение)_
 
 ---
 
@@ -115,4 +115,5 @@ _Игра "Морской Бой", реализованная на языке С
 `Game Over`
 \
 \
-__Скачать и протестировать игру --->__ [`Download`](https://github.com/bukmanduk/SeaBattle/releases/download/v1.0.0/Battleship.exe)
+__Скачать и протестировать игру --->__ [`Download`](https://github.com/bukmanduk/SeaBattle/releases/download/v1.0.0/Battleship.exe)\
+[Вверх](#up)

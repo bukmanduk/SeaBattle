@@ -347,9 +347,9 @@ void SeaBattle::End()
 			if (m_bot.GetSymbolFromBoard(point) == GAME_SYMBOL && m_bot.GetAdressFromBoard(point) != 0)
 				m_bot.SetSymbolOnBoard(point, SHIP_SYMBOL);
 		std::cout << "\n | BOT WINS!\n\n";
+		std::cout << "\n | See the ships you cant find (symbol: S):\n\n";
 	}
 	else std::cout << "\n | YOU WIN!\n\n";
-	std::cout << "\n | See the ships you cant find (symbol: S):\n\n";
 	DisplayBoards();
 	std::cout << "\n\n\n\n\n\n ";
 }
